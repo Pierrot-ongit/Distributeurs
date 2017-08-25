@@ -1,0 +1,237 @@
+<?php
+
+function fields_distributeurs_list(){
+    return array(
+        'field_distributeur_id',
+        'field_distributeur_reference',
+        'field_siret',
+        'field_motivation_distributeur',
+        'field_bon_achat_distributeur',
+    );
+}
+
+/**
+ * @param $name = nom du field
+ * @param $type =  type de field
+ * @param $module = le module qui crée le field type
+ * @cardinality = nombre de fois que le champ peut etre renseigné
+ */
+function fields_distributeurs_config($name, $type, $module, $cardinality){
+    $field_config = field_read_fields(array('field_name' => $name));
+    if(!$field_config){
+
+        $record = array(
+            'field_name' => $name,
+            'type' => $type,
+            'module' => $module,
+            'active' => 1,
+            'storage_type' => 'field_sql_storage',
+            'storage_module' => 'field_sql_storage',
+            'storage_active' => 1,
+            'locked' => 0,
+            'data' => '',
+            'cardinality' => $cardinality,
+            'translatable' => 0,
+            'deleted' => 0,
+        );
+
+        // Store the field and get the id back.
+        drupal_write_record('field_config', $record);
+
+        drupal_set_message($name.'_config has been created.');
+    }
+    else {
+        drupal_set_message($name.'_config was already created.');
+    }
+}
+
+/**
+ * Implements hook_install().
+ *
+ * Creates several fields and role distributeur
+ */
+function distributeurs_install() {
+    watchdog('distributeurs', 'Test d\'installation');
+
+    /*******************************/
+
+    if(!user_role_load_by_name('distributeur')){
+        $role = new stdClass();
+        $role->name = 'distributeur';
+        user_role_save($role);
+    }
+
+    /*******************************/
+
+    if (!db_table_exists('field_data_field_distributeur_reference')) {
+        watchdog('distributeurs', 'distributeur_reference n\'existe pas et on va créer la table.');
+        $field = array(
+            'field_name' => 'field_distributeur_reference',
+            'type' => 'entityreference',
+            'cardinality' => 1,
+            'settings' => array(
+                'target_type' => 'user',
+            ),
+        );
+
+        field_create_field($field);
+        drupal_set_message($field['field_name'].' was created.');
+    }
+    else {
+        drupal_set_message('field_distributeur_reference was already created.');
+
+    }
+        $instance['field_distributeur_reference'] = array(
+            'field_name' => 'field_distributeur_reference',
+            'entity_type' => 'user',
+            'bundle' => 'user',
+            'label' => t('Distributeur Reference'),
+            'widget' => array(
+                'type' => 'autocomplete',
+            ),
+        );
+
+    watchdog('distributeurs', $instance['field_distributeur_reference']['field_name']);
+    /*******************************/
+
+    if (!db_table_exists('field_data_field_distributeur_id')) {
+        # Create the field singleton
+        $field = array('field_name' => 'field_distributeur_id', 'type' => 'text',);
+        $field = field_create_field($field);
+        drupal_set_message($field['field_name'].' was created.');
+    }
+    else {
+        drupal_set_message('field_distributeur_id was already created.');
+
+    }
+    # Create the instance on the bundle.
+    $instance['field_distributeur_id'] = array(
+        'field_name' => 'field_distributeur_id',
+        'entity_type' => 'user',
+        'bundle' => 'user',
+        'label' => t('Distributeur ID'),
+        'required' => FALSE,
+        'widget' => array(
+            'type' => 'textfield',
+        ),
+    );
+
+    /*******************************/
+    if (!db_table_exists('field_data_field_siret')) {
+        # Create the field singleton
+        $field = array('field_name' => 'field_siret', 'type' => 'text',);
+        $field = field_create_field($field);
+        drupal_set_message($field['field_name'].' was created.');
+    }
+    else {
+        drupal_set_message('field_siret was already created.');
+    }
+        # Create the instance on the bundle.
+        $instance['field_siret'] = array(
+            'field_name' => 'field_siret',
+            'entity_type' => 'user',
+            'bundle' => 'user',
+            'label' => t('N° SIRET'),
+            'description' => 'Votre numéro SIRET.',
+            'required' => FALSE,
+            'widget' => array(
+                'type' => 'textfield',
+            ),
+        );
+
+
+    /*******************************/
+    if (!db_table_exists('field_data_field_motivation_distributeur')) {
+        # Create the field singleton
+        $field = array('field_name' => 'field_motivation_distributeur', 'type' => 'text_long',);
+        $field = field_create_field($field);
+        drupal_set_message($field['field_name'].' was created.');
+    }
+    else {
+        drupal_set_message('field_motivation_distributeur was already created.');
+    }
+        # Create the instance on the bundle.
+        $instance['field_motivation_distributeur'] = array(
+            'field_name' => 'field_motivation_distributeur',
+            'entity_type' => 'user',
+            'bundle' => 'user',
+            'label' => t('Motivation Distributeur'),
+            'description' => 'Veuillez préciser les raisons pour lesquelles vous souhaitez devenir Distributeur Cellfood.',
+            'required' => FALSE,
+            'widget' => array(
+                'type' => 'text_textarea',
+            ),
+        );
+
+    /*******************************/
+
+    if (!db_table_exists('field_data_field_bon_achat_distributeur')) {
+        # Create the field singleton
+        $field = array('field_name' => 'field_bon_achat_distributeur', 'type' => 'commerce_price',);
+        $field = field_create_field($field);
+        drupal_set_message($field['field_name'].' was created.');
+    }
+    else {
+        drupal_set_message('field_bon_achat_distributeur was already created.');
+    }
+        # Create the instance on the bundle.
+        $instance['field_bon_achat_distributeur'] = array(
+            'field_name' => 'field_bon_achat_distributeur',
+            'entity_type' => 'user',
+            'bundle' => 'user',
+            'label' => t('Bon d\'achat Distributeur'),
+            'description' => 'Le montant du bon d\'achat disponible pour ce compte distributeur.',
+            'required' => FALSE,
+        );
+
+    /*******************************/
+  //Insertion des instances
+
+  //field_create_instance($instance);
+    if(!empty($instance)){
+        //dpm($instance);
+        foreach ($instance as $instance_field){
+            field_create_instance($instance_field);
+        }
+    }
+
+
+}
+
+/**
+ * Implements hook_uninstall().
+ *
+ * @see distributeurs_install()
+ */
+function distributeurs_uninstall() {
+    watchdog('distributeurs', 'Test de désinstallation');
+    $fields_distributeur = fields_distributeurs_list();
+    foreach ($fields_distributeur as $field_name) {
+        $infos = field_info_field($field_name);
+        if (!empty($infos)) {
+            field_delete_field($field_name);
+            watchdog('Distributeurs', 'Deleted the :field_name field from all content type instances.', array
+            (':field_name' => $field_name));
+        }
+    }
+
+    field_purge_batch(count($fields_distributeur) + 5);
+
+    // Delete the rules
+    $rule = rules_config_load('rules_create_distributeur_relation');
+    if(!empty($rule)){
+        rules_config_delete($rule->id);
+    }
+    $rule = rules_config_load('rules_commission_distributeur');
+    if(!empty($rule)){
+        rules_config_delete($rule->id);
+    }
+    $rule = rules_config_load('rules_commission_bon_achat');
+    if(!empty($rule)){
+        rules_config_delete($rule->id);
+    }
+    $rule = rules_config_load('rules_bon_achat_distributeur_used');
+    if(!empty($rule)){
+        rules_config_delete($rule->id);
+    }
+}

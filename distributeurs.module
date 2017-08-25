@@ -1,0 +1,220 @@
+<?php
+function distributeurs_views_api() {
+    return array('api' => 3);
+}
+
+
+/**
+ * Implements hook_menu().
+ */
+function distributeurs_menu() {
+  $items = array();
+
+    $items['devenir-distributeur-cellfood'] = array(
+        'title' => 'Devenir distributeur',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('distributeurs_form'),
+        'access callback' => 'user_is_logged_in',
+        'type' => MENU_CALLBACK,
+        'menu_name' => 'main-menu',
+        'plid' => 2352,
+    );
+
+
+  return $items;
+}
+
+
+
+
+/**
+ * Creates the form for searching customers by name or email address.
+ */
+function distributeurs_form($form, &$form_state) {
+    global $user;
+    $uid = $user->uid;
+
+    $rid = user_role_load_by_name('distributeur')->rid; // L'iD du Role distributeur
+    if (apply_for_role_user_has_role($uid, $rid)){
+        drupal_set_message(t('Vous êtes déjà enregistré en tant que Distributeur'));
+    }
+
+    elseif (!apply_for_role_user_has_role($uid, $rid)) {
+        $has_rows = (bool) db_query_range('SELECT 1 FROM {users_roles_apply} WHERE uid = :uid AND rid = :rid', 0, 1, array(':uid' => $uid, ':rid' => $rid))->fetchField();
+        if ($has_rows) {
+            drupal_set_message(t('Une demande pour un role de Distributeur a déjà été soumise avec ce compte utilisateur, et est déjà en cours de traitement'), 'warning');
+        }
+    }
+
+    $form = array(
+        '#prefix' => '<div id="distributeurs-register-form">',
+        '#suffix' => '</div>',
+        '#attached' => array(
+            'css' => array( drupal_get_path('module', 'distributeurs') . '/distributeurs.css'),
+        ),
+        '#theme' => array('distributeurs_form'),
+    );
+
+    $form['adresse'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Adresse'),
+        '#collapsible' => TRUE,
+        '#collapsed' => FALSE,
+    );
+    $form['adresse']['Adresse'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Adresse'),
+    );
+    $form['adresse']['Code Postal'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Code Postal'),
+    );
+    $form['adresse']['Ville'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Ville'),
+    );
+    $form['adresse']['Pays'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Pays'),
+    );
+
+
+    $form['infos-pro'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Informations professionnelles'),
+        '#collapsible' => TRUE,
+        '#collapsed' => FALSE,
+    );
+    $form['infos-pro']['SIRET'] = array(
+        '#type' => 'textfield',
+        '#title' => t('SIRET ou N° de TVA'),
+        '#required' => TRUE,
+    );
+    $form['infos-pro']['profession'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Profession'),
+        '#required' => TRUE,
+    );
+    $form['motivation'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Qu’est ce qui vous motive à devenir distributeur Cellfood® ?'),
+        '#required' => TRUE,
+    );
+  $form['actions'] = array(
+    '#type' => 'container',
+  );
+
+  $form['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Soumettre votre demande'),
+    '#suffix' => l(t('Reset'), 'devenir-distributeur-test'),
+  );
+
+  return $form;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Alters the admin create order from to add billing and shipping profile
+ * fields whenever a customer is loaded by email or name.
+ */
+
+/**
+ * Validates the conformity of the form's fields
+ */
+function distributeurs_form_validate(&$form, &$form_state) {
+    global $user;
+    $uid = $user->uid;
+
+    $rid = user_role_load_by_name('distributeur')->rid; // L'iD du Role distributeur
+    if (apply_for_role_user_has_role($uid, $rid)){
+        form_set_error('submit', t('Vous êtes déjà enregistré en tant que Distributeur.'));
+    }
+
+    elseif (!apply_for_role_user_has_role($uid, $rid)) {
+        $has_rows = (bool) db_query_range('SELECT 1 FROM {users_roles_apply} WHERE uid = :uid AND rid = :rid', 0, 1, array(':uid' => $uid, ':rid' => $rid))->fetchField();
+        if ($has_rows) {
+            form_set_error('submit', t('Une demande pour un role de Distributeur a déjà été soumise avec ce compte utilisateur, et est déjà en cours de traitement.'));
+        }
+    }
+
+}
+
+
+/**
+ * Submit handler for creating a new account or editing one already existing.
+ */
+function distributeurs_form_submit(&$form, &$form_state) {
+    global $user;
+    // load user
+    $existingUser = user_load($user->uid);
+
+      if(!empty($form_state['values']['SIRET'])) {
+          $existingUser->field_siret[LANGUAGE_NONE][0]['value'] = $form_state['values']['SIRET'];
+      }
+      if(!empty($form_state['values']['motivation'])) {
+          $existingUser->field_motivation_distributeur[LANGUAGE_NONE][0]['value'] = $form_state['values']['motivation'];
+      }
+      /**********/
+    if(!empty($form_state['values']['Adresse'])) {
+        $existingUser->field_adresse[LANGUAGE_NONE][0]['value'] = $form_state['values']['Adresse'];
+}
+    if(!empty($form_state['values']['Code Postal'])) {
+        $existingUser->field_code_postal[LANGUAGE_NONE][0]['value'] = $form_state['values']['Code Postal'];
+    }
+    if(!empty($form_state['values']['Ville'])) {
+        $existingUser->field_ville[LANGUAGE_NONE][0]['value'] = $form_state['values']['motivation'];
+    }
+    if(!empty($form_state['values']['Pays'])) {
+        $existingUser->field_pays[LANGUAGE_NONE][0]['value'] = $form_state['values']['Pays'];
+    }
+
+
+
+      // Création du distributeur_id, de la référence praticien. L'équivalent du Moka ID.
+    $distributeur_id = $existingUser->field_nom[LANGUAGE_NONE][0]['value'] .
+        $existingUser->field_prenom[LANGUAGE_NONE][0]['value'];
+    $distributeur_id= strtolower($distributeur_id);
+    $existingUser->field_distributeur_id[LANGUAGE_NONE][0]['value'] = $distributeur_id;
+
+    // save existing user
+    user_save($existingUser);
+
+    // Role application
+    $rid = user_role_load_by_name('distributeur')->rid;
+    apply_for_role_add_apply($user,$rid);
+    drupal_set_message(t('Votre demande pour un rôle de distributeur a bien été prise en compte. Vous recevrez une réponse prochainement.'));
+
+    //TODO : A FAIRE
+    // Redirect the user to another custom page.
+ // $form_state['redirect'] = 'devenir-distributeur/validation';
+}
+
+/**
+ * Implements hook_theme().
+ */
+
+function distributeurs_theme() {
+    // Register the template specific for the commerce pdf order.
+    $items['distributeurs_form'] = array(
+        'render element' => 'form',
+        'path' => drupal_get_path('module', 'distributeurs') . '/templates',
+        'template' => 'distributeurs',
+    );
+    return $items;
+}
+
+/**
+ * Hook pour Commerce discount offer type
+ */
+function distributeurs_commerce_discount_offer_type_info() {
+    $types = array();
+    $types['distributeurs_remise_bon_achat'] = array(
+        'label' => t('Distributeurs Remise bon d\'achat'),
+        'action' => 'distributeurs_remise_bon_achat',
+        'entity types' => array('commerce_order'),
+    );
+
+    return $types;
+}

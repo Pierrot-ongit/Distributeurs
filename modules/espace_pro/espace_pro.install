@@ -1,0 +1,11 @@
+<?php
+
+function espace_pro_install() {
+    module_load_include('module', 'espace_pro');
+    $rid = user_role_load_by_name('distributeur')->rid;
+    user_role_grant_permissions($rid, array (
+        'access espace professionnel' => TRUE,
+        )
+    );
+
+}

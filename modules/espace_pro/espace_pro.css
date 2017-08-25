@@ -1,0 +1,24 @@
+#espace-professionnel-panel .panels-flexible-region h2 {
+    color: dodgerblue;
+    text-align: center;
+}
+#espace-professionnel-panel .panels-flexible-region table {
+    font-size: 1.2em;
+    text-align: right;
+}
+#espace-professionnel-panel .panels-flexible-region table thead th {
+    color: dodgerblue;
+    text-align: right;
+}
+#espace-professionnel-panel .panels-flexible-region .views-field-commerce-affiliate-amount,
+#espace-professionnel-panel .panels-flexible-region .views-field-field-bon-achat-distributeur {
+    font-weight: 600;
+
+}
+#espace-professionnel-panel .panels-flexible-region .views-field-field-bon-achat-distributeur {
+    font-size: 1.2em;
+    text-align: center;
+    font-weight: 600;
+}
+
+

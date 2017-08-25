@@ -1,0 +1,12 @@
+name = Espace Professionnel
+description = Une page d'espace personnel attribué aux distributeurs.
+core = 7.x
+package = Commerce (contrib)
+dependencies[] = distributeurs
+dependencies[] = views_content
+dependencies[] = panels
+dependencies[] = page_manager
+
+
+files[] = espace_pro.views_default.inc
+files[] = espace_pro.css
